@@ -1,11 +1,10 @@
 package com.example.springboot.hospitalManagement.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.springboot.hospitalManagement.Entity.type.BloodGroupType;
+import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
@@ -18,9 +17,12 @@ public class Patient {
 
     private String name;
 
-    private LocalTime birthDate;
+    private LocalDate birthDate;
 
     private String email;
 
     private String gender;
+
+    @Enumerated(EnumType.STRING)
+    private BloodGroupType bloodGroup;
 }
