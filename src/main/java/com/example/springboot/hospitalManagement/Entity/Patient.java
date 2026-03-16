@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+
 
 @Data
 @Entity
@@ -19,6 +19,7 @@ public class Patient {
 
     private LocalDate birthDate;
 
+    @Column(unique = true)
     private String email;
 
     private String gender;
