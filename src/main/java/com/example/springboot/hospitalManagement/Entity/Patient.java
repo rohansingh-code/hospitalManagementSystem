@@ -44,4 +44,7 @@ public class Patient {
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToOne
+    private Insurance insurance;
 }
