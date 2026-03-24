@@ -46,5 +46,6 @@ public class Patient {
     private LocalDateTime createdAt;
 
     @OneToOne
+    @JoinColumn(name = "patient_insurance_id")//owning
     private Insurance insurance;
 }
