@@ -51,7 +51,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
 
-        patient.getAppointments().add(appointment);
+        patient.getAppointments().add(appointment);//bidirectional
 
         return appointmentRepository.save(appointment);
     }

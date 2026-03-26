@@ -6,5 +6,6 @@ import com.example.springboot.hospitalManagement.Entity.Patient;
 public interface InsuranceService {
 
     Patient assignInsuranceToPatient(Insurance insurance, Long patientId);
+    Patient removeInsurance(Long patientId);
 
 }

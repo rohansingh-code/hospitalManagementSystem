@@ -28,4 +28,16 @@ public class InsuranceServiceImpl implements InsuranceService {
 
         return patient;
     }
+
+    @Override
+    @Transactional
+    public Patient removeInsurance(Long patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+        patient.setInsurance(null);
+
+        return patient;
+
+    }
 }
