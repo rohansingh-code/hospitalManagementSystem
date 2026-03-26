@@ -4,6 +4,9 @@ import com.example.springboot.hospitalManagement.Entity.Appointment;
 
 public interface AppointmentService {
 
-    Appointment createNewAppointment(Appointment appointment,Long doctorId,Long patientId);
+    Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId);
+
+    Appointment createNewAppointment(Appointment appointment, Long doctorId, Long patientId);
+
 
 }

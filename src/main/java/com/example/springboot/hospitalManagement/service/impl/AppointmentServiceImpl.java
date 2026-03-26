@@ -15,6 +15,21 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
 
+    @Transactional
+    @Override
+    public Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId) {
+
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        appointment.setDoctor(doctor);
+
+        return appointmentRepository.save(appointment);
+    }
+
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
