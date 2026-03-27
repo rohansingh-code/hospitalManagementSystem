@@ -1,15 +1,14 @@
 package com.example.springboot.hospitalManagement.dto;
 
-import jakarta.transaction.Transactional;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateAppointmentRequestDto {
     private Long doctorId;
     private Long patientId;
