@@ -1,12 +1,16 @@
 package com.example.springboot.hospitalManagement.service;
 
 import com.example.springboot.hospitalManagement.Entity.Appointment;
+import com.example.springboot.hospitalManagement.dto.AppointmentResponseDto;
+import com.example.springboot.hospitalManagement.dto.CreateAppointmentRequestDto;
+
+import java.util.List;
 
 public interface AppointmentService {
 
+    AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto);
+
     Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId);
 
-    Appointment createNewAppointment(Appointment appointment, Long doctorId, Long patientId);
-
-
+    List<AppointmentResponseDto> getAllAppointmentsOfDoctor(Long doctorId);
 }
