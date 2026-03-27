@@ -1,19 +1,44 @@
-INSERT INTO patient (name, birth_date, email, gender, blood_group)
-VALUES ('Rohan Sharma', '1998-05-15', 'rohan@gmail.com', 'male', 'B_POSITIVE')
-    ON CONFLICT (email) DO NOTHING;
+-- ======================
+-- DOCTORS
+-- ======================
+INSERT INTO doctor (id, name, specialization, email) VALUES
+                                                         (1, 'Dr. Sharma', 'Cardiology', 'sharma@gmail.com'),
+                                                         (2, 'Dr. Mehta', 'Neurology', 'mehta@gmail.com'),
+                                                         (3, 'Dr. Rao', 'Orthopedics', 'rao@gmail.com');
 
-INSERT INTO patient (name, birth_date, email, gender, blood_group)
-VALUES ('Priya Singh', '1995-08-22', 'priya@gmail.com', 'female', 'A_POSITIVE')
-    ON CONFLICT (email) DO NOTHING;
+-- ======================
+-- INSURANCE
+-- ======================
+INSERT INTO insurance (id, policy_number, provider, valid_until, created_at) VALUES
+                                                                                 (1, 'POL123', 'SBI', '2030-12-31', NOW()),
+                                                                                 (2, 'POL456', 'LIC', '2029-06-15', NOW());
 
-INSERT INTO patient (name, birth_date, email, gender, blood_group)
-VALUES ('Arjun Mehta', '2000-01-10', 'arjun@gmail.com', 'male', 'O_NEGATIVE')
-    ON CONFLICT (email) DO NOTHING;
+-- ======================
+-- PATIENT
+-- ======================
+INSERT INTO patient (id, name, birth_date, email, gender, blood_group, created_at, patient_insurance_id) VALUES
+                                                                                                             (1, 'Rohan', '2003-05-10', 'rohan@gmail.com', 'Male', 'O_POSITIVE', NOW(), 1),
+                                                                                                             (2, 'Amit', '2000-08-20', 'amit@gmail.com', 'Male', 'A_POSITIVE', NOW(), 2);
 
-INSERT INTO patient (name, birth_date, email, gender, blood_group)
-VALUES ('Sneha Patel', '1990-11-30', 'sneha@gmail.com', 'female', 'AB_POSITIVE')
-    ON CONFLICT (email) DO NOTHING;
+-- ======================
+-- DEPARTMENT
+-- ======================
+INSERT INTO department (id, name, head_doctor_id) VALUES
+                                                      (1, 'Cardiology', 1),
+                                                      (2, 'Neurology', 2);
 
-INSERT INTO patient (name, birth_date, email, gender, blood_group)
-VALUES ('Vikram Das', '1985-07-04', 'vikram@gmail.com', 'male', 'O_POSITIVE')
-    ON CONFLICT (email) DO NOTHING;
+-- ======================
+-- DEPARTMENT_DOCTORS (Many-to-Many)
+-- ======================
+INSERT INTO department_doctors (dpt_id, doctor_id) VALUES
+                                                       (1, 1),
+                                                       (1, 3),
+                                                       (2, 2);
+
+-- ======================
+-- APPOINTMENTS
+-- ======================
+INSERT INTO appointment (id, appointment_time, reason, doctor_id, patient_id) VALUES
+                                                                                  (1, NOW() + INTERVAL '1 day', 'Heart checkup', 1, 1),
+                                                                                  (2, NOW() + INTERVAL '2 day', 'Brain MRI consultation', 2, 2),
+                                                                                  (3, NOW() + INTERVAL '3 day', 'Knee pain', 3, 1);
