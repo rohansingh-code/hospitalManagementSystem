@@ -10,30 +10,28 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    private final JwtAuthFilter jwtAuthFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                // 1. Disable CSRF since we are using tokens, not session cookies
-                .csrf(AbstractHttpConfigurer::disable)
-
-                // 2. Set session management to STATELESS so Spring doesn't create sessions
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // 3. Define authorization rules
+                .csrf(csrfConfig -> csrfConfig.disable())
+                .sessionManagement(sessionConfig ->
+                        sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/doctors/**").hasAnyRole("DOCTOR", "ADMIN")
                         .anyRequest().authenticated()
-                );
+                )
+                // Add the filter before the standard UsernamePassword filter
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
