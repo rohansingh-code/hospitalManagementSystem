@@ -2,6 +2,7 @@ package com.example.springboot.hospitalManagement.controller;
 
 import com.example.springboot.hospitalManagement.dto.LoginRequestDto;
 import com.example.springboot.hospitalManagement.dto.LoginResponseDto;
+import com.example.springboot.hospitalManagement.dto.SignUpResponseDto;
 import com.example.springboot.hospitalManagement.security.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,16 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto){
+    public ResponseEntity<LoginResponseDto> loginUser(@RequestBody LoginRequestDto loginRequestDto){
 
-        return ResponseEntity.ok(authService.login(loginRequestDto);
+        return ResponseEntity.ok(authService.login(loginRequestDto));
+
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<SignUpResponseDto> login(@RequestBody LoginRequestDto signUpRequestDto){
+
+        return ResponseEntity.ok(authService.signup(signUpRequestDto));
 
     }
 }
