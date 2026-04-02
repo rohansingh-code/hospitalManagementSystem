@@ -46,6 +46,10 @@ public class Patient {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @MapsId
+    @OneToOne
+    private User user;
+
     @OneToOne(cascade = {CascadeType.ALL},orphanRemoval = true)
     @JoinColumn(name = "patient_insurance_id")//owning
     private Insurance insurance;

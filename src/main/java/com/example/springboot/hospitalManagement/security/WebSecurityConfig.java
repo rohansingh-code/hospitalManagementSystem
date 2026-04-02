@@ -12,6 +12,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static com.example.springboot.hospitalManagement.Entity.type.RoleType.*;
+
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -27,7 +29,8 @@ public class WebSecurityConfig {
                         sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole(ADMIN.name())
+                        .requestMatchers("/doctors/**").hasAnyRole(DOCTOR.name(),ADMIN.name())
                         .anyRequest().authenticated()
                 )
                 // Add the filter before the standard UsernamePassword filter
