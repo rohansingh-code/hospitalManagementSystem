@@ -35,8 +35,8 @@ public class DoctorServiceImpl implements DoctorService {
                 .collect(Collectors.toList());
     }
 
-    @Override
     @Transactional
+    @Override
     public DoctorResponseDto onBoardNewDoctor(OnBoardDoctorRequestDto onBoardDoctorRequestDto) {
 
         User user = userRepository

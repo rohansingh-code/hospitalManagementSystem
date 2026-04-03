@@ -18,7 +18,7 @@ import java.util.List;
 public class AdminController {
 
     private final PatientServiceImpl patientService;
-    private fina; DoctorServiceImpl doctorService;
+    private final DoctorServiceImpl doctorServiceimpl;
 
     @GetMapping("/patients")
     public ResponseEntity<List<PatientResponseDto>> getAllPatients(
@@ -31,7 +31,7 @@ public class AdminController {
 
     @PostMapping("/onBoardNewDoctor")
     public ResponseEntity<DoctorResponseDto> onBoardNewDoctor(OnBoardDoctorRequestDto onBoardNewDoctorDto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.onBoardDoctor(onBoardNewDoctorDto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorServiceimpl.onBoardNewDoctor(onBoardNewDoctorDto));
 
 
     }
