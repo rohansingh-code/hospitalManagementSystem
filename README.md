@@ -11,13 +11,14 @@ A production-grade backend REST API for managing hospital operations — built w
 - **Role-Based Access Control (RBAC)** — Three roles (`ADMIN`, `DOCTOR`, `PATIENT`) with endpoint-level access restrictions enforced through Spring Security's filter chain.
 - **Signup with automatic Patient profile creation** — New users are registered with roles and a linked `Patient` entity is automatically created.
 - **BCrypt password hashing** — All passwords are securely encoded before storage.
+- **Centralized JWT exception delegation** — `JwtAuthFilter` delegates all token parsing errors to `GlobalExceptionHandler` via `HandlerExceptionResolver`, ensuring consistent error responses.
 
 ### 🏗️ Core Domain
-- **Patient Management** — Registration, profile retrieval, blood group tracking, insurance linking, and paginated listing (admin only).
-- **Doctor Management** — Public doctor listing, specialization tracking, and department association.
-- **Appointment System** — Create appointments between patients and doctors, view doctor-specific appointments, and reassign appointments to different doctors.
-- **Insurance Management** — Assign or remove insurance policies from patients with full cascade support.
-- **Department Management** — Departments with many-to-many doctor associations and a designated head doctor.
+- **Patient Management** — Profile retrieval by ID and paginated listing (admin only) using a native SQL query via Spring Data's `Page` support.
+- **Doctor Management** — Public doctor listing, onboarding of new doctors (admin only) with automatic `DOCTOR` role assignment to the linked `User`.
+- **Appointment System** — Create appointments between patients and doctors with reason and time; reassign appointments to a different doctor; view all appointments for a logged-in doctor.
+- **Insurance Management** — Assign or remove insurance policies from patients with full cascade and orphan removal support.
+- **Department Management** — Departments with a designated head doctor and a many-to-many association with multiple doctors.
 
 ### 🛡️ Error Handling
 - **Global exception handler** via `@RestControllerAdvice` covering:
@@ -25,7 +26,7 @@ A production-grade backend REST API for managing hospital operations — built w
   - `AccessDeniedException` → 403 Forbidden
   - `JwtException` → 401 Unauthorized
   - `UsernameNotFoundException` → 404 Not Found
-  - Generic exceptions → 500 Internal Server Error
+  - Generic `Exception` → 500 Internal Server Error
 - Structured `ApiError` response with timestamp, error message, and HTTP status.
 
 ---
@@ -34,16 +35,16 @@ A production-grade backend REST API for managing hospital operations — built w
 
 ```
 src/main/java/com/example/springboot/hospitalManagement/
-├── Entity/                  # JPA Entities (User, Patient, Doctor, Appointment, etc.)
+├── Entity/                  # JPA Entities (User, Patient, Doctor, Appointment, Insurance, Department)
 │   └── type/                # Enums (RoleType, BloodGroupType)
-├── Repository/              # Spring Data JPA Repositories
-├── service/                 # Service interfaces
+├── Repository/              # Spring Data JPA Repositories (6 interfaces)
+├── service/                 # Service interfaces (AppointmentService, DoctorService, InsuranceService, PatientService)
 │   └── impl/                # Service implementations
-├── controller/              # REST Controllers
-├── dto/                     # Request/Response DTOs
-├── security/                # JWT filter, auth service, security config
-├── config/                  # App configuration (ModelMapper, PasswordEncoder)
-└── error/                   # Global exception handling
+├── controller/              # REST Controllers (Auth, Admin, Doctor, Patient, Public)
+├── dto/                     # Request/Response DTOs (10 classes)
+├── security/                # JWT filter, AuthService, AuthUtil, WebSecurityConfig, CustomUserDetailsService
+├── config/                  # App configuration (ModelMapper, PasswordEncoder via AppConfig)
+└── error/                   # GlobalExceptionHandler + ApiError
 ```
 
 ---
@@ -73,20 +74,21 @@ src/main/java/com/example/springboot/hospitalManagement/
 | POST   | `/auth/login`         | Login and receive JWT |
 
 ### Authenticated (Any logged-in user)
-| Method | Endpoint                | Description                |
-|--------|-------------------------|----------------------------|
-| POST   | `/patients/appointments`| Create a new appointment   |
-| GET    | `/patients/profile`     | Get patient profile        |
+| Method | Endpoint                 | Description                |
+|--------|--------------------------|----------------------------|
+| POST   | `/patients/appointments` | Create a new appointment   |
+| GET    | `/patients/profile`      | Get patient profile        |
 
 ### Doctor / Admin Only
-| Method | Endpoint               | Description                          |
-|--------|------------------------|--------------------------------------|
-| GET    | `/doctors/appointments`| Get appointments for logged-in doctor|
+| Method | Endpoint                | Description                           |
+|--------|-------------------------|---------------------------------------|
+| GET    | `/doctors/appointments` | Get appointments for logged-in doctor |
 
 ### Admin Only
-| Method | Endpoint           | Description                             |
-|--------|--------------------|-----------------------------------------|
-| GET    | `/admin/patients`  | List all patients (paginated)           |
+| Method | Endpoint                  | Description                             |
+|--------|---------------------------|-----------------------------------------|
+| GET    | `/admin/patients`         | List all patients (paginated)           |
+| POST   | `/admin/onBoardNewDoctor` | Onboard an existing user as a doctor    |
 
 > All endpoints are prefixed with `/api/v1` (configured via `server.servlet.context-path`).
 
@@ -102,11 +104,35 @@ User (1) ── (1) Patient ── (1) Insurance
   └──── (1) Doctor ──── (M) Department
 ```
 
-- `User` implements `UserDetails` and holds a set of `RoleType` roles.
+- `User` implements `UserDetails` and holds a `Set<RoleType>` (`ADMIN`, `DOCTOR`, `PATIENT`) stored eagerly as strings.
 - `Patient` and `Doctor` share the `User` primary key via `@MapsId` + `@OneToOne`.
-- `Patient` ↔ `Insurance` is a bidirectional `@OneToOne` with cascade and orphan removal.
-- `Patient` ↔ `Appointment` is `@OneToMany` with cascade remove.
-- `Doctor` ↔ `Department` is a `@ManyToMany` relationship.
+- `Patient` has a composite unique constraint on `(name, birthDate)` and an index on `birthDate`.
+- `Patient` ↔ `Insurance` — bidirectional `@OneToOne`; `Patient` is the owning side with `CascadeType.ALL` and orphan removal.
+- `Patient` ↔ `Appointment` — `@OneToMany` with `CascadeType.REMOVE` and orphan removal.
+- `Doctor` ↔ `Department` — `@ManyToMany`; `Department` is the owning side via a `department_doctors` join table.
+- `Department` has a `@OneToOne` reference to a `headDoctor`.
+- `Appointment` stores `appointmentTime` (`LocalDateTime`) and an optional `reason` (max 500 chars).
+- `Insurance` stores `policyNumber` (unique), `provider`, and `validUntil` date with a `@CreationTimestamp` audit field.
+- `BloodGroupType` enum: `A_POSITIVE`, `A_NEGATIVE`, `B_POSITIVE`, `B_NEGATIVE`, `AB_POSITIVE`, `AB_NEGATIVE`, `O_POSITIVE`, `O_NEGATIVE`.
+
+---
+
+## 🔑 Security Flow
+
+```
+Request
+  └─► JwtAuthFilter (OncePerRequestFilter)
+        ├── No/invalid Bearer token → pass through (public routes) or delegate exception
+        ├── Valid token → extract username via AuthUtil (HMAC-SHA)
+        │                 └── load User from DB, set SecurityContext
+        └─► WebSecurityConfig (SecurityFilterChain)
+              ├── /public/**, /auth/** → permitAll
+              ├── /admin/**           → ROLE_ADMIN only
+              ├── /doctors/**         → ROLE_DOCTOR or ROLE_ADMIN
+              └── any other request   → authenticated
+```
+
+JWT tokens embed: `subject` (username), `userId` claim, `issuedAt`, and `expiration` (10 minutes). Signed with HMAC-SHA using the configured secret key.
 
 ---
 
@@ -179,8 +205,35 @@ curl http://localhost:8080/api/v1/patients/profile \
   -H "Authorization: Bearer <your-jwt-token>"
 ```
 
+### Create an Appointment
+```bash
+curl -X POST http://localhost:8080/api/v1/patients/appointments \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "patientId": 1,
+    "doctorId": 2,
+    "appointmentTime": "2026-05-01T10:30:00",
+    "reason": "Annual checkup"
+  }'
+```
+
+### Onboard a New Doctor (Admin only)
+```bash
+curl -X POST http://localhost:8080/api/v1/admin/onBoardNewDoctor \
+  -H "Authorization: Bearer <admin-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 5,
+    "name": "Dr. Kapoor",
+    "specialization": "Dermatology"
+  }'
+```
+
 ---
 
 ## ⚠️ Notes
 - `spring.jpa.hibernate.ddl-auto` is set to `create` — tables are dropped and recreated on every startup. Change to `update` or `validate` for production.
-- SQL data seeding via `data.sql` is present but currently **disabled**.
+- SQL data seeding via `data.sql` is present but currently **disabled** (re-enable by uncommenting the `spring.sql.init.*` properties in `application.properties`).
+- `spring.jpa.show-sql=true` is enabled by default — disable in production to reduce log verbosity.
+- The `/patients/profile` endpoint currently uses a hardcoded patient ID (`1L`) — this should be replaced with the authenticated user's ID from the `SecurityContext` in a future iteration.
