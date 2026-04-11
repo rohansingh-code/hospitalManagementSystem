@@ -3,16 +3,18 @@ spring:
     name: hospitalManagement
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://postgres:5432/hospitalDb}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update   # ?? use update instead of create in Docker
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
 server:
