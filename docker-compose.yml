@@ -2,13 +2,16 @@ services:
   app:
     build: .
     container_name: hospital-app
+    restart: on-failure
     ports:
       - "8080:8080"
     env_file:
       - .env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - hospital-network
 
@@ -22,6 +25,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - hospital-network
 
@@ -29,8 +37,8 @@ services:
     image: redis:7-alpine
     container_name: hospital-redis
     restart: always
-    ports:
-      - "6379:6379"
+#    ports:
+#      - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --save 60 1 --loglevel warning

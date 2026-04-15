@@ -2,7 +2,6 @@ package com.example.springboot.hospitalManagement.service.impl;
 
 import com.example.springboot.hospitalManagement.Entity.Insurance;
 import com.example.springboot.hospitalManagement.Entity.Patient;
-import com.example.springboot.hospitalManagement.Repository.InsuranceRepository;
 import com.example.springboot.hospitalManagement.Repository.PatientRepository;
 import com.example.springboot.hospitalManagement.service.InsuranceService;
 import jakarta.transaction.Transactional;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class InsuranceServiceImpl implements InsuranceService {
 
-    private final InsuranceRepository insuranceRepository;
     private final PatientRepository patientRepository;
 
     @Override
@@ -24,9 +22,8 @@ public class InsuranceServiceImpl implements InsuranceService {
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         patient.setInsurance(insurance);
-        insurance.setPatient(patient);
 
-        return patient;
+        return patientRepository.save(patient);
     }
 
     @Override
@@ -37,7 +34,7 @@ public class InsuranceServiceImpl implements InsuranceService {
 
         patient.setInsurance(null);
 
-        return patient;
+        return patientRepository.save(patient);
 
     }
 }

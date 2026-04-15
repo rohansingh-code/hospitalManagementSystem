@@ -1,17 +1,32 @@
 package com.example.springboot.hospitalManagement.error;
 
 import io.jsonwebtoken.JwtException;
+import org.springframework.validation.FieldError;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.stream.Collectors;
+
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        String validationErrors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining("; "));
+        ApiError apiError = new ApiError("Validation failed: " + validationErrors, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiError> handleUsernameNotFoundException(UsernameNotFoundException ex) {

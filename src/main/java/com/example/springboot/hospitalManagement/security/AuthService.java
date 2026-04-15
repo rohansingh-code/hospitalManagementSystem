@@ -30,8 +30,7 @@ public class AuthService {
 
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequestDto.getUsername(),loginRequestDto.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(loginRequestDto.getUsername(), loginRequestDto.getPassword()));
         User user = (User) authentication.getPrincipal();
 
         String token = authUtil.generateAccessToken(user);
@@ -42,14 +41,15 @@ public class AuthService {
     public SignUpResponseDto signup(SignUpRequestDto signUpRequestDto) {
         User user = userRepository.findByUsername(signUpRequestDto.getUsername()).orElse(null);
 
-        if(user != null){
+        if (user != null) {
             throw new IllegalArgumentException("user already exists");
         }
 
+        // Default all new signups to PATIENT role — never trust roles from client
         user = userRepository.save(User.builder()
                 .username(signUpRequestDto.getUsername())
                 .password(passwordEncoder.encode(signUpRequestDto.getPassword()))
-                .roles(signUpRequestDto.getRoles())
+                .roles(Set.of(RoleType.PATIENT))
                 .build());
 
         Patient patient = Patient.builder()
@@ -59,7 +59,6 @@ public class AuthService {
                 .build();
 
         patientRepository.save(patient);
-
 
         return new SignUpResponseDto(user.getId(), user.getUsername());
     }

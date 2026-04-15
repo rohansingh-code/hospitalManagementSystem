@@ -1,13 +1,16 @@
 package com.example.springboot.hospitalManagement.controller;
 
+import com.example.springboot.hospitalManagement.Entity.User;
 import com.example.springboot.hospitalManagement.dto.AppointmentResponseDto;
 import com.example.springboot.hospitalManagement.dto.CreateAppointmentRequestDto;
 import com.example.springboot.hospitalManagement.dto.PatientResponseDto;
-import com.example.springboot.hospitalManagement.service.impl.AppointmentServiceImpl;
-import com.example.springboot.hospitalManagement.service.impl.PatientServiceImpl;
+import com.example.springboot.hospitalManagement.service.AppointmentService;
+import com.example.springboot.hospitalManagement.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,17 +18,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PatientController {
 
-    private final PatientServiceImpl patientService;
-    private final AppointmentServiceImpl appointmentService;
+    private final PatientService patientService;
+    private final AppointmentService appointmentService;
 
     @PostMapping("/appointments")
-    public ResponseEntity<AppointmentResponseDto> createNewAppointment(@RequestBody CreateAppointmentRequestDto createAppointmentRequestDto){
+    public ResponseEntity<AppointmentResponseDto> createNewAppointment(@Valid @RequestBody CreateAppointmentRequestDto createAppointmentRequestDto){
         return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.createNewAppointment(createAppointmentRequestDto));
     }
 
     @GetMapping("/profile")
     public ResponseEntity<PatientResponseDto> getPatientInfo(){
-        Long patientId = 1L;
-        return ResponseEntity.ok(patientService.getPatientById(patientId));
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(patientService.getPatientById(user.getId()));
     }
 }

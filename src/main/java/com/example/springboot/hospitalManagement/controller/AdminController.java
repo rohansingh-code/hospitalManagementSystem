@@ -3,8 +3,9 @@ package com.example.springboot.hospitalManagement.controller;
 import com.example.springboot.hospitalManagement.dto.DoctorResponseDto;
 import com.example.springboot.hospitalManagement.dto.OnBoardDoctorRequestDto;
 import com.example.springboot.hospitalManagement.dto.PatientResponseDto;
-import com.example.springboot.hospitalManagement.service.impl.DoctorServiceImpl;
-import com.example.springboot.hospitalManagement.service.impl.PatientServiceImpl;
+import com.example.springboot.hospitalManagement.service.DoctorService;
+import com.example.springboot.hospitalManagement.service.PatientService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +18,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final PatientServiceImpl patientService;
-    private final DoctorServiceImpl doctorServiceimpl;
+    private final PatientService patientService;
+    private final DoctorService doctorService;
 
     @GetMapping("/patients")
     public ResponseEntity<List<PatientResponseDto>> getAllPatients(
@@ -30,8 +31,8 @@ public class AdminController {
 
 
     @PostMapping("/onBoardNewDoctor")
-    public ResponseEntity<DoctorResponseDto> onBoardNewDoctor(OnBoardDoctorRequestDto onBoardNewDoctorDto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(doctorServiceimpl.onBoardNewDoctor(onBoardNewDoctorDto));
+    public ResponseEntity<DoctorResponseDto> onBoardNewDoctor(@Valid @RequestBody OnBoardDoctorRequestDto onBoardNewDoctorDto){
+        return ResponseEntity.status(HttpStatus.CREATED).body(doctorService.onBoardNewDoctor(onBoardNewDoctorDto));
 
 
     }

@@ -41,7 +41,7 @@ public class DoctorServiceImpl implements DoctorService {
 
         User user = userRepository
                 .findById(onBoardDoctorRequestDto.getUserId())
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + onBoardDoctorRequestDto.getUserId()));
 
         if (doctorRepository.existsById(onBoardDoctorRequestDto.getUserId())) {
             throw new IllegalArgumentException("Already a doctor");
@@ -58,7 +58,6 @@ public class DoctorServiceImpl implements DoctorService {
 
         return modelMapper.map(
                 doctorRepository.save(doctor),
-                DoctorResponseDto.class
-        );
+                DoctorResponseDto.class);
     }
 }

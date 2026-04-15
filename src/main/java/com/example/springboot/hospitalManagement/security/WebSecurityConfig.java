@@ -34,29 +34,29 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .csrf(csrfConfig -> csrfConfig.disable())
-                .sessionManagement(sessionConfig ->
-                        sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(
+                        sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole(ADMIN.name())
-                        .requestMatchers("/doctors/**").hasAnyRole(DOCTOR.name(),ADMIN.name())
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers("/doctors/**").hasAnyRole(DOCTOR.name(), ADMIN.name())
+                        .anyRequest().authenticated())
                 // Add the filter before the standard UsernamePassword filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptionConfig -> exceptionConfig.accessDeniedHandler(new AccessDeniedHandler() {
                     @Override
-                    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+                    public void handle(HttpServletRequest request, HttpServletResponse response,
+                            AccessDeniedException accessDeniedException) throws IOException, ServletException {
                         handlerExceptionResolver.resolveException(request, response, null, accessDeniedException);
                     }
                 }));
-
 
         return httpSecurity.build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }
