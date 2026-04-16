@@ -11,7 +11,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - hospital-network
 
@@ -34,14 +34,19 @@ services:
       - hospital-network
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack:latest
     container_name: hospital-redis
     restart: always
-#    ports:
-#      - "6379:6379"
+    ports:
+      - "6379:6379"
+      - "8001:8001"   # RedisInsight UI
     volumes:
       - redis_data:/data
-    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - hospital-network
 
