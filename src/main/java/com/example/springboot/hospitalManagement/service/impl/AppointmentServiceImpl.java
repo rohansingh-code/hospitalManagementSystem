@@ -12,10 +12,13 @@ import com.example.springboot.hospitalManagement.service.AppointmentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AppointmentServiceImpl implements AppointmentService {
@@ -29,23 +32,37 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto) {
 
+        log.info("Creating appointment for doctorId={} and patientId={}",
+                dto.getDoctorId(), dto.getPatientId());
+
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
-                .orElseThrow(() -> new EntityNotFoundException("Doctor not found"));
+                .orElseThrow(() -> {
+                    log.error("Doctor not found with id={}", dto.getDoctorId());
+                    return new EntityNotFoundException("Doctor not found");
+                });
 
         Patient patient = patientRepository.findById(dto.getPatientId())
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+                .orElseThrow(() -> {
+                    log.error("Patient not found with id={}", dto.getPatientId());
+                    return new EntityNotFoundException("Patient not found");
+                });
 
         Appointment appointment = Appointment.builder()
                 .reason(dto.getReason())
                 .appointmentTime(dto.getAppointmentTime())
                 .build();
 
+        // Set relationships
         appointment.setDoctor(doctor);
         appointment.setPatient(patient);
 
+        // Maintain bidirectional consistency
+        doctor.getAppointments().add(appointment);
         patient.getAppointments().add(appointment);
 
         appointment = appointmentRepository.save(appointment);
+
+        log.info("Appointment created successfully with id={}", appointment.getId());
 
         return modelMapper.map(appointment, AppointmentResponseDto.class);
     }
@@ -54,15 +71,34 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId) {
 
+        log.info("Reassigning appointmentId={} to doctorId={}", appointmentId, doctorId);
+
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new EntityNotFoundException("Appointment not found"));
+                .orElseThrow(() -> {
+                    log.error("Appointment not found with id={}", appointmentId);
+                    return new EntityNotFoundException("Appointment not found");
+                });
 
-        Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new EntityNotFoundException("Doctor not found"));
+        Doctor newDoctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> {
+                    log.error("Doctor not found with id={}", doctorId);
+                    return new EntityNotFoundException("Doctor not found");
+                });
 
-        appointment.setDoctor(doctor);
+        // Remove from old doctor (important fix)
+        Doctor oldDoctor = appointment.getDoctor();
+        if (oldDoctor != null) {
+            oldDoctor.getAppointments().remove(appointment);
+            log.info("Removed appointment {} from old doctor {}", appointmentId, oldDoctor.getId());
+        }
 
-        doctor.getAppointments().add(appointment);
+        // Assign new doctor
+        appointment.setDoctor(newDoctor);
+        newDoctor.getAppointments().add(appointment);
+
+        appointment = appointmentRepository.save(appointment);
+
+        log.info("Appointment {} successfully reassigned to doctor {}", appointmentId, doctorId);
 
         return appointment;
     }
@@ -70,12 +106,21 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public List<AppointmentResponseDto> getAllAppointmentsOfDoctor(Long doctorId) {
 
-        Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new EntityNotFoundException("Doctor not found"));
+        log.info("Fetching all appointments for doctorId={}", doctorId);
 
-        return doctor.getAppointments()
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> {
+                    log.error("Doctor not found with id={}", doctorId);
+                    return new EntityNotFoundException("Doctor not found");
+                });
+
+        List<AppointmentResponseDto> appointments = doctor.getAppointments()
                 .stream()
                 .map(app -> modelMapper.map(app, AppointmentResponseDto.class))
                 .toList();
+
+        log.info("Found {} appointments for doctorId={}", appointments.size(), doctorId);
+
+        return appointments;
     }
 }
