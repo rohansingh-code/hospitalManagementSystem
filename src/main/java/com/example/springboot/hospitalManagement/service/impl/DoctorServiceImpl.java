@@ -50,6 +50,9 @@ public class DoctorServiceImpl implements DoctorService {
         Doctor doctor = Doctor.builder()
                 .name(onBoardDoctorRequestDto.getName())
                 .specialization(onBoardDoctorRequestDto.getSpecialization())
+                .experienceYears(onBoardDoctorRequestDto.getExperienceYears())
+                .qualifications(onBoardDoctorRequestDto.getQualifications())
+                .bio(onBoardDoctorRequestDto.getBio())
                 .email(user.getUsername())
                 .user(user)
                 .build();

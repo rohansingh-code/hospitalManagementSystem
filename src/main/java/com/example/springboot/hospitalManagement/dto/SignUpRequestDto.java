@@ -1,13 +1,14 @@
 package com.example.springboot.hospitalManagement.dto;
 
+import com.example.springboot.hospitalManagement.Entity.type.BloodGroupType;
 import com.example.springboot.hospitalManagement.Entity.type.RoleType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,7 +17,9 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SignUpRequestDto {
-    @NotBlank(message = "Username is required")
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String username;
 
     @NotBlank(message = "Password is required")
@@ -26,5 +29,13 @@ public class SignUpRequestDto {
     @NotBlank(message = "Name is required")
     private String name;
 
-    private Set<RoleType> roles = new HashSet<>();
+    @NotNull(message = "Birth date is required")
+    @Past(message = "Birth date must be in the past")
+    private LocalDate birthDate;
+
+    @NotBlank(message = "Gender is required")
+    private String gender;
+
+    @NotNull(message = "Blood group is required")
+    private BloodGroupType bloodGroup;
 }

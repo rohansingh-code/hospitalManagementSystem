@@ -45,7 +45,7 @@ public class AuthService {
             throw new IllegalArgumentException("user already exists");
         }
 
-        // Default all new signups to PATIENT role — never trust roles from client
+
         user = userRepository.save(User.builder()
                 .username(signUpRequestDto.getUsername())
                 .password(passwordEncoder.encode(signUpRequestDto.getPassword()))
@@ -55,6 +55,9 @@ public class AuthService {
         Patient patient = Patient.builder()
                 .name(signUpRequestDto.getName())
                 .email(signUpRequestDto.getUsername())
+                .birthDate(signUpRequestDto.getBirthDate())
+                .gender(signUpRequestDto.getGender())
+                .bloodGroup(signUpRequestDto.getBloodGroup())
                 .user(user)
                 .build();
 
