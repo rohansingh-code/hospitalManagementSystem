@@ -12,4 +12,6 @@ public interface DoctorService {
     List<DoctorResponseDto> getAllDoctors();
 
     DoctorResponseDto onBoardNewDoctor(OnBoardDoctorRequestDto onBoardDoctorRequestDto);
+
+    List<DoctorResponseDto> getDoctorsBySpecialization(String specialization);
 }

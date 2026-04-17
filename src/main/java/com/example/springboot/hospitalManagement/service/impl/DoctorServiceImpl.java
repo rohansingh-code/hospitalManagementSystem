@@ -63,4 +63,15 @@ public class DoctorServiceImpl implements DoctorService {
                 doctorRepository.save(doctor),
                 DoctorResponseDto.class);
     }
+
+    @Override
+    public List<DoctorResponseDto> getDoctorsBySpecialization(String specialization) {
+
+        log.info("Fetching doctors with specialization: {}", specialization);
+
+        return doctorRepository.findBySpecializationIgnoreCase(specialization)
+                .stream()
+                .map(doctor -> modelMapper.map(doctor, DoctorResponseDto.class))
+                .collect(Collectors.toList());
+    }
 }
