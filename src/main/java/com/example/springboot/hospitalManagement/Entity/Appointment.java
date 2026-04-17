@@ -9,26 +9,36 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @ToString
+@Table(
+    name = "appointment",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_doctor_time",
+            columnNames = {"doctor_id", "appointment_time"}
+        )
+    }
+)
 public class Appointment {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "appointment_time", nullable = false)
     private LocalDateTime appointmentTime;
 
     @Column(length = 500)
     private String reason;
 
     @ManyToOne
-    @JoinColumn(name = "patient_id",nullable = false) //Appointment requires a patient
+    @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 }

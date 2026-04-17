@@ -23,19 +23,22 @@ public class PatientController {
 
     @PostMapping("/appointments")
     public ResponseEntity<AppointmentResponseDto> createNewAppointment(
-            @Valid @RequestBody CreateAppointmentRequestDto dto){
+            @Valid @RequestBody CreateAppointmentRequestDto dto) {
 
+ 
         User user = (User) SecurityContextHolder
                 .getContext()
                 .getAuthentication()
                 .getPrincipal();
 
+        // Pass the DTO and the secure Patient ID to the service
+        // Note: Even if the DTO has a patientId, we use user.getId() for security
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(appointmentService.createNewAppointment(dto, user.getId()));
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<PatientResponseDto> getPatientInfo(){
+    public ResponseEntity<PatientResponseDto> getPatientInfo() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(patientService.getPatientById(user.getId()));
     }

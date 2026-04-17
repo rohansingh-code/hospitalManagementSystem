@@ -16,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Slf4j
@@ -30,96 +33,67 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Transactional
     @Override
-    public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto, Long patientId) {
+    public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto, Long patientIdFromSecurity) {
+        log.info("Booking request for Doctor ID: {} by secure Patient ID: {}", dto.getDoctorId(), patientIdFromSecurity);
 
-        log.info("Creating appointment for doctorId={} and patientId={}",
-                dto.getDoctorId(), patientId);
-
+        // 1. Load Entities
+        // Load doctor from DTO
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
-                .orElseThrow(() -> {
-                    log.error("Doctor not found with id={}", dto.getDoctorId());
-                    return new EntityNotFoundException("Doctor not found");
-                });
+                .orElseThrow(() -> new EntityNotFoundException("Doctor not found"));
 
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> {
-                    log.error("Patient not found with id={}", patientId);
-                    return new EntityNotFoundException("Patient not found");
-                });
 
+        Patient patient = patientRepository.findById(patientIdFromSecurity)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        LocalDateTime requestedTime = dto.getAppointmentTime();
+
+        // 2. Validation: Check Work Day
+        DayOfWeek requestedDay = requestedTime.getDayOfWeek();
+        if (!doctor.getWorkDays().contains(requestedDay)) {
+            throw new IllegalStateException("Doctor " + doctor.getName() + " does not work on " + requestedDay);
+        }
+
+        // 3. Validation: Check Shift Hours
+        LocalTime timeOnly = requestedTime.toLocalTime();
+        if (timeOnly.isBefore(doctor.getShiftStart()) || timeOnly.isAfter(doctor.getShiftEnd())) {
+            throw new IllegalStateException("Requested time " + timeOnly + " is outside the doctor's shift (" 
+                    + doctor.getShiftStart() + " - " + doctor.getShiftEnd() + ")");
+        }
+
+        // 4. Validation: Check if the slot is already taken (Duplicate Check)
+        if (appointmentRepository.existsByDoctorAndAppointmentTime(doctor, requestedTime)) {
+            throw new IllegalStateException("The doctor is already booked for this time slot.");
+        }
+
+        // 5. Create Appointment
         Appointment appointment = Appointment.builder()
                 .reason(dto.getReason())
-                .appointmentTime(dto.getAppointmentTime())
+                .appointmentTime(requestedTime)
+                .doctor(doctor)
+                .patient(patient)
                 .build();
 
-        // Set relationships
-        appointment.setDoctor(doctor);
-        appointment.setPatient(patient);
-
-        // Maintain bidirectional consistency
+        // 6. Save and Sync relationships
+        appointment = appointmentRepository.save(appointment);
+        
+        // Update bidirectional relationships in current persistence context
         doctor.getAppointments().add(appointment);
         patient.getAppointments().add(appointment);
 
-        appointment = appointmentRepository.save(appointment);
-
-        log.info("Appointment created successfully with id={}", appointment.getId());
-
+        log.info("Successfully created appointment ID: {} for secure Patient: {}", appointment.getId(), patientIdFromSecurity);
         return modelMapper.map(appointment, AppointmentResponseDto.class);
-    }
-    @Transactional
-    @Override
-    public Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId) {
-
-        log.info("Reassigning appointmentId={} to doctorId={}", appointmentId, doctorId);
-
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> {
-                    log.error("Appointment not found with id={}", appointmentId);
-                    return new EntityNotFoundException("Appointment not found");
-                });
-
-        Doctor newDoctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> {
-                    log.error("Doctor not found with id={}", doctorId);
-                    return new EntityNotFoundException("Doctor not found");
-                });
-
-        // Remove from old doctor (important fix)
-        Doctor oldDoctor = appointment.getDoctor();
-        if (oldDoctor != null) {
-            oldDoctor.getAppointments().remove(appointment);
-            log.info("Removed appointment {} from old doctor {}", appointmentId, oldDoctor.getId());
-        }
-
-        // Assign new doctor
-        appointment.setDoctor(newDoctor);
-        newDoctor.getAppointments().add(appointment);
-
-        appointment = appointmentRepository.save(appointment);
-
-        log.info("Appointment {} successfully reassigned to doctor {}", appointmentId, doctorId);
-
-        return appointment;
     }
 
     @Override
     public List<AppointmentResponseDto> getAllAppointmentsOfDoctor(Long doctorId) {
+        log.info("Fetching all appointments for doctor ID: {}", doctorId);
+        
+        if (!doctorRepository.existsById(doctorId)) {
+            throw new EntityNotFoundException("Doctor not found");
+        }
 
-        log.info("Fetching all appointments for doctorId={}", doctorId);
-
-        Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> {
-                    log.error("Doctor not found with id={}", doctorId);
-                    return new EntityNotFoundException("Doctor not found");
-                });
-
-        List<AppointmentResponseDto> appointments = doctor.getAppointments()
-                .stream()
+        return appointmentRepository.findByDoctorId(doctorId).stream()
                 .map(app -> modelMapper.map(app, AppointmentResponseDto.class))
                 .toList();
-
-        log.info("Found {} appointments for doctorId={}", appointments.size(), doctorId);
-
-        return appointments;
     }
 }
