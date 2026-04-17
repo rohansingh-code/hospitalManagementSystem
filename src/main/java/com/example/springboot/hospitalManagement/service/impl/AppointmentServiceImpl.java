@@ -30,10 +30,10 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Transactional
     @Override
-    public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto) {
+    public AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto, Long patientId) {
 
         log.info("Creating appointment for doctorId={} and patientId={}",
-                dto.getDoctorId(), dto.getPatientId());
+                dto.getDoctorId(), patientId);
 
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
                 .orElseThrow(() -> {
@@ -41,9 +41,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                     return new EntityNotFoundException("Doctor not found");
                 });
 
-        Patient patient = patientRepository.findById(dto.getPatientId())
+        Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> {
-                    log.error("Patient not found with id={}", dto.getPatientId());
+                    log.error("Patient not found with id={}", patientId);
                     return new EntityNotFoundException("Patient not found");
                 });
 
@@ -66,7 +66,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         return modelMapper.map(appointment, AppointmentResponseDto.class);
     }
-
     @Transactional
     @Override
     public Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId) {

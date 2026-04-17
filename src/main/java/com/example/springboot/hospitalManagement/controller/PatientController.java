@@ -22,8 +22,16 @@ public class PatientController {
     private final AppointmentService appointmentService;
 
     @PostMapping("/appointments")
-    public ResponseEntity<AppointmentResponseDto> createNewAppointment(@Valid @RequestBody CreateAppointmentRequestDto createAppointmentRequestDto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.createNewAppointment(createAppointmentRequestDto));
+    public ResponseEntity<AppointmentResponseDto> createNewAppointment(
+            @Valid @RequestBody CreateAppointmentRequestDto dto){
+
+        User user = (User) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(appointmentService.createNewAppointment(dto, user.getId()));
     }
 
     @GetMapping("/profile")

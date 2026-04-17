@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface AppointmentService {
 
-    AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto);
+    AppointmentResponseDto createNewAppointment(CreateAppointmentRequestDto dto,Long patientId);
 
     Appointment reAssignAppointmentToAnotherDr(Long appointmentId, Long doctorId);
 
