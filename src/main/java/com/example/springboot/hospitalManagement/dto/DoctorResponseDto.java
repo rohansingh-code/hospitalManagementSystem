@@ -2,7 +2,6 @@ package com.example.springboot.hospitalManagement.dto;
 
 import lombok.*;
 
-import java.util.Set;
 
 @Getter
 @Setter

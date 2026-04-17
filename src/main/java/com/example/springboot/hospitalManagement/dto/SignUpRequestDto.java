@@ -1,7 +1,6 @@
 package com.example.springboot.hospitalManagement.dto;
 
 import com.example.springboot.hospitalManagement.Entity.type.BloodGroupType;
-import com.example.springboot.hospitalManagement.Entity.type.RoleType;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,8 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter

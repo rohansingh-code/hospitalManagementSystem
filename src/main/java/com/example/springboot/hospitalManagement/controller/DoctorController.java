@@ -4,8 +4,6 @@ package com.example.springboot.hospitalManagement.controller;
 import com.example.springboot.hospitalManagement.Entity.User;
 import com.example.springboot.hospitalManagement.dto.AppointmentResponseDto;
 import com.example.springboot.hospitalManagement.service.AppointmentService;
-import com.example.springboot.hospitalManagement.service.impl.AppointmentServiceImpl;
-import com.example.springboot.hospitalManagement.service.impl.DoctorServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
